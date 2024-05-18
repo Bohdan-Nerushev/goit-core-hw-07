@@ -107,6 +107,12 @@ class AddressBook(UserDict):
                     upcoming_birthdays.append(
                         {"name": record.name.value, "birthday": birthday_this_year.strftime("%d.%m.%Y")}
                     )
+                elif birthday_this_year < today:
+                    birthday_next_year = birthday_date.replace(year=today.year + 1)
+                    if today <= birthday_next_year <= today + timedelta(days=days):
+                        upcoming_birthdays.append(
+                            {"name": record.name.value, "birthday": birthday_next_year.strftime("%d.%m.%Y")}
+                        )
         return upcoming_birthdays
 
 
@@ -208,7 +214,6 @@ def show_birthday(book: AddressBook, name):
 def birthdays(book: AddressBook, days=7):
     upcoming_birthdays = book.get_upcoming_birthdays(days)
     if upcoming_birthdays:
-        # Підготувати список для виводу з необхідними ключами
         result = [
             {"name": info["name"], "congratulation_date": info["birthday"]} for info in upcoming_birthdays
         ]

@@ -2,6 +2,7 @@ from collections import UserDict
 from datetime import datetime, timedelta
 import re
 
+
 class Field:
     def __init__(self, value):
         self.value = value
@@ -9,9 +10,11 @@ class Field:
     def __str__(self):
         return str(self.value)
 
+
 class Name(Field):
     def __init__(self, value):
         super().__init__(value)
+
 
 class Phone(Field):
     def __init__(self, value):
@@ -22,6 +25,7 @@ class Phone(Field):
 
     def __str__(self):
         return str(self.value)
+
 
 class Birthday(Field):
     def __init__(self, value):
@@ -38,6 +42,7 @@ class Birthday(Field):
 
     def __str__(self):
         return self.value.strftime('%d.%m.%Y')
+
 
 class Record:
     def __init__(self, name):
@@ -77,6 +82,7 @@ class Record:
         birthday_str = f", birthday: {self.birthday}" if self.birthday else ""
         return f"Contact name: {self.name}, phones: {phones}{birthday_str}"
 
+
 class AddressBook(UserDict):
     def add_record(self, record):
         if not isinstance(record, Record):
@@ -103,16 +109,20 @@ class AddressBook(UserDict):
                     )
         return upcoming_birthdays
 
+
 def input_error(func):
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except (ValueError, KeyError, IndexError, TypeError) as e:
             return str(e)
+
     return inner
+
 
 def parse_input(user_input):
     return user_input.lower().strip().split()
+
 
 @input_error
 def add_contact(args, book: AddressBook):
@@ -134,6 +144,7 @@ def add_contact(args, book: AddressBook):
     record.add_phone(phone.value)
     return message
 
+
 @input_error
 def change_contact(book: AddressBook, name, new_phone):
     try:
@@ -151,6 +162,7 @@ def change_contact(book: AddressBook, name, new_phone):
     else:
         return "Contact not found."
 
+
 @input_error
 def show_phone(book: AddressBook, name):
     record = book.find(name)
@@ -159,37 +171,51 @@ def show_phone(book: AddressBook, name):
     else:
         return "Contact not found."
 
+
 @input_error
 def show_all(book: AddressBook):
     contacts_info = [str(record) for record in book.data.values() if isinstance(record, Record)]
     return '\n'.join(contacts_info) or "Contact list is empty."
 
+
 @input_error
 def add_birthday(book: AddressBook, name, birthday):
     record = book.find(name)
     if record:
-        record.add_birthday(birthday)
-        return "Birthday added/updated."
+        try:
+            record.add_birthday(birthday)  # Викликати метод add_birthday об'єкта record
+            return "Birthday added/updated."
+        except ValueError as e:
+            return str(e)
     else:
         return "Contact not found."
+
 
 @input_error
 def show_birthday(book: AddressBook, name):
     record = book.find(name)
-    if record and record.birthday:
-        return f"{record.name.value}'s birthday: {record.info_birthday()}"
+    if record:
+        birthday_info = record.info_birthday()  # Отримати інформацію про день народження
+        if birthday_info:
+            return f"{record.name.value}'s birthday: {birthday_info}"
+        else:
+            return "Birthday information not found."
     else:
-        return "Birthday information not found."
+        return "Contact not found."
+
 
 @input_error
 def birthdays(book: AddressBook, days=7):
     upcoming_birthdays = book.get_upcoming_birthdays(days)
     if upcoming_birthdays:
-        result = "Upcoming birthdays:\n"
-        result += "\n".join(f"{info['name']}: {info['birthday']}" for info in upcoming_birthdays)
+        # Підготувати список для виводу з необхідними ключами
+        result = [
+            {"name": info["name"], "congratulation_date": info["birthday"]} for info in upcoming_birthdays
+        ]
         return result
     else:
         return "No upcoming birthdays."
+
 
 def main():
     book = AddressBook()
@@ -199,14 +225,15 @@ def main():
         if not user_input.strip():
             print("Please enter a command.")
             continue
-        
+
         command, *args = parse_input(user_input)
 
-        if command in ["close", "exit"]:
+        if command in ["close", "exit", 'stop']:
             print("Goodbye!")
             break
         elif command == "hello":
             print("How can I help you?")
+
         elif command == "add":
             print(add_contact(args, book))
         elif command == "change":
@@ -233,10 +260,17 @@ def main():
                 print("Please provide a contact name for the show-birthday command.")
         elif command == "birthdays":
             days = int(args[0]) if args else 7
-            print(birthdays(book, days))
+            result = birthdays(book, days)
+            if isinstance(result, str):
+                print(result)
+            else:
+                print("[")
+                for entry in result:
+                    print(f"    {entry},")
+                print("]")
         else:
             print("Invalid command. Please try again.")
 
+
 if __name__ == '__main__':
     main()
-
